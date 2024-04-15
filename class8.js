@@ -58,7 +58,7 @@ class Transaction {
     }
   
     withdraw(amount) {
-      if (amount > 0 && amount <= this._balance) {  // if the amount to withdraw is greater than 0 and less than or equel to the current balanace
+      if (amount > 0 && amount <= this._balance) {  // if the amounts to withdraw is greater than 0 and less than or equel to the current balanace
         this._balance -= amount;                    // subtract the amount from the balance
         this._transactions.push(new Transaction('withdraw', amount));  // method creates an object with type withdrawal and amount and adds to the list of transactions
       } else {                                                         // otherwise
