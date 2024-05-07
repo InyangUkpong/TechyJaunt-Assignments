@@ -43,8 +43,6 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
-
-
 app.get('/', (req, res) => {
     res.send('Hello from Node API Server')
 });
@@ -136,16 +134,6 @@ app.get('/api/accounts/:accountId/transactions', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
-
-// Create transaction
-
-
-// Fetch single transaction
-
-
-
 
 // Daily Withdrawal limit
 app.post('/api/accounts/:accountId/withdrawal', async (req, res) => {
@@ -254,7 +242,6 @@ app.post('/api/accounts/:accountId/withdrawals', async (req, res) => {
         
   
 });
-
 
 //Deposit API
 app.post('/api/accounts/:accountId/deposit', async (req, res) => {
