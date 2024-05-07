@@ -80,6 +80,7 @@ app.get('/api/accounts/:accountId/transactions', async (req, res) => {
 ## Extra Images
 
 **PUT Request**: *Used to Update User Account for Marilyn Rouge Using Insomnia API Debugging Tool*
+
 ![alt text](PUT-request-updateAPI-marilynRouge.png)
 
 *VScode Editor Screenshot*!
