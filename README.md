@@ -83,6 +83,6 @@ app.get('/api/accounts/:accountId/transactions', async (req, res) => {
 ![alt text](PUT-request-updateAPI-marilynRouge.png)
 
 *VScode Editor Screenshot*!
-![alt text](bankAcc-transaction-simulation.png)
+![alt text](vscode-workspace1.png)
 
 **AUTHOR:** "*Inyang Ukpong*"
