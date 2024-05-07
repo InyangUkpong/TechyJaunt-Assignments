@@ -1,6 +1,6 @@
 # Simulation Bank Account System
 
-## In this simulation implementation of a Bank Account System
+## This simulation is an implementation of a Bank Account System
 
 The Transaction class represents a single transaction with attributes like type (deposit or withdraw), amount, and date.
 The BankAccount class represents a bank account with attributes like account number, first name, last name, account holder's full name, balance, and transactions.
