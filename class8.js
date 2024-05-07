@@ -25,16 +25,42 @@ class BankAccount {
       }
   }
 
+  // withdraw(amount) {
+  //     if (amount > 0 && (this.__withdrawalAmountToday + amount) <= this.__dailyWithdrawalLimit && amount <= this.__balance) {
+  //         this.__balance -= amount;
+  //         this.__transactions.push({ type: "Withdrawal", amount: -amount, timestamp: new Date() });
+  //         this.__withdrawalAmountToday += amount;
+  //         return true;
+  //     } else {
+  //         return false;
+  //     }
+  // }
+
   withdraw(amount) {
-      if (amount > 0 && (this.__withdrawalAmountToday + amount) <= this.__dailyWithdrawalLimit && amount <= this.__balance) {
-          this.__balance -= amount;
-          this.__transactions.push({ type: "Withdrawal", amount: -amount, timestamp: new Date() });
-          this.__withdrawalAmountToday += amount;
-          return true;
-      } else {
-          return false;
-      }
-  }
+    const today = new Date().toDateString();
+
+    // Reset daily withdrawal amount if it's a new day
+    if (this._lastWithdrawalDate !== today) {
+        this._lastWithdrawalDate = today;
+        this._dailyWithdrawalAmount = 0;
+    }
+
+    // Check if withdrawal is allowed based on various conditions
+    if (amount > 0 && amount <= this._balance && amount <= this._dailyWithdrawalLimit && (this._dailyWithdrawalAmount + amount) <= this._dailyWithdrawalLimit) {
+        // If all conditions are met, perform withdrawal
+        this._balance -= amount;
+        this._transactions.push({
+            type: "withdrawal",
+            amount: amount,
+            timestamp: new Date()
+        });
+        this._dailyWithdrawalAmount += amount;
+        console.log("Withdrawal successful.");
+    } else {
+        // If any condition fails, log an error message
+        console.log("Withdrawal not allowed. Please check if amount exceeds balance or daily withdrawal limit.");
+    }
+}
 
   transfer(amount, recipientAccount) {
       if (amount > 0 && amount <= this.__balance && (this.__withdrawalAmountToday + amount) <= this.__dailyWithdrawalLimit) {
