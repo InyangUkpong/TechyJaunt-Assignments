@@ -3,11 +3,12 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
-// const Account = require('./models/account.models.js');
 const Transaction = require('./models/transaction.js');
 const Account = require('./models/account.js');
 const transactionRoutes = require("./routes/transactionRoutes");
 const accountRoutes = require("./routes/accountRoutes");
+const { dbURI } = require('./config');
+require('dotenv').config();
 
 const app = express();
 const port = 3000
@@ -19,15 +20,21 @@ app.use(transactionRoutes);
 
 dotenv.config();
 
+// mongoose.connect(process.env.MONGODB_URI, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   });
+
 
 // Connecting to db through TablePlus 
-const dbUri = "mongodb://localhost:27017/assignment4"
-mongoose.connect(dbUri)
+
+
+mongoose.connect(process.env.dbURI)
  .then(() => {
     console.log("Connected to MongoDB");
   }).catch((err) => {
-    console.error("Error connecting to MongoDB", err);
-  });
+    console.log("connection failed");
+});
 
 // Connecting through Atlas
 // mongoose.connect("mongodb+srv://inyangweb:ZA32sr7y6oWO3DlZ@backenddb.zkdsvwp.mongodb.net/Node-API?retryWrites=true&w=majority&appName=backendDB")
