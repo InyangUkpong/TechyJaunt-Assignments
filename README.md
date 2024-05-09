@@ -23,7 +23,6 @@ are provided to perform actions on the account and retrieve transaction history.
 7. Daily Withdrawal Limit
 8. Withdrawal
 9. Deposit
-10. ![alt text](APIs-Batch1.png)
 
 ``` js
 app.put('/api/accounts/:accountId', async (req, res) => {
