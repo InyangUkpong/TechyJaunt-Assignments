@@ -12,8 +12,6 @@ Methods like:
 3. getTransactions
 are provided to perform actions on the account and retrieve transaction history.
 
-![alt text](bankAcc-transaction-simulation.png)
-
 ## Additional Features (APIs Implementation)
 
 1. Fetch all accounts
