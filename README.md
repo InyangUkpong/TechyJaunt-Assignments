@@ -74,13 +74,4 @@ app.get('/api/accounts/:accountId/transactions', async (req, res) => {
 
 ![alt text](dockerfile-docker1.png)
 
-## Extra Images
-
-**PUT Request**: *Used to Update User Account for Marilyn Rouge Using Insomnia API Debugging Tool*
-
-![alt text](PUT-request-updateAPI-marilynRouge.png)
-
-*VScode Editor Screenshot of app.js*!
-![alt text](vscode-workspace1.png)
-
 **AUTHOR:** "*Inyang Ukpong*"

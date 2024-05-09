@@ -127,17 +127,17 @@ app.put('/api/accounts/:accountId', async (req, res) => {
 // Fetches all transactions for an account
 app.get('/api/accounts/:accountId/transactions', async (req, res) => {
   try {
-        const accountId = req.params.accountId;
+    const accountId = req.params.accountId;
         
 
-        const account = await Account.findById(accountId);
+    const account = await Account.findById(accountId).populate("transactions");
         if (!account) {
             return res.status(404).json({ error: 'Account not found' });
         }
     
-        const transactions = account.transactions;
+    const transactions = account.transactions;
     res.status(200).json({transactions});
-  } catch (error) {
+  }catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -287,9 +287,6 @@ app.post('/api/accounts/:accountId/deposit', async (req, res) => {
 
 
 
-
-
-
 //BoilerPlate
 // app.get('/accounts', (req, res) => {
 //     res.send('Hello World!')
@@ -321,103 +318,9 @@ app.post('/api/accounts/:accountId/deposit', async (req, res) => {
 //     res.send('Hello World!')
 // });
 
-// app.put('/accounts', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.put('/transactions', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.patch('/accounts', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.patch('/transactions', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// Deposit
-
-// app.post('/api/accounts/:accountId/deposit', async (req, res) => {
-//     try {
-      // Deposit logic goes here
-//     } catch (error) {
-//       res.status(500).json({ error: 'Internal server error' });
-//     }
-//   });  
 
 
 
 
 
 
-
-
-//Exprimental codes
-// Connect to MongoDB
-// mongoose.connect(process.env.MONGODB_URI, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// })
-// .then(() => {
-//     console.log("Connected to MongoDB");
-// }).catch((err) => {
-//     console.error("Error connecting to MongoDB", err);
-// });
-
-// Routes
-// const accountRoutes = require('./routes/accountRoutes');
-// const transactionRoutes = require('./routes/transactionRoutes');
-
-// app.use('/api/accounts', accountRoutes);
-// app.use('/api/transactions', transactionRoutes);
-
-
-//Experiments*********
-
-// Withdrawal API 
-// app.post('/api/accounts/:accountId/withdrawal', async (req, res) => {
-//     try {
-//         const accountId = req.params.accountId;
-//         const withdrawalAmount = req.body.amount;
-
-        // Validate withdrawal amount
-//         if (!withdrawalAmount || withdrawalAmount <= 0) {
-//             return res.status(400).json({ error: "Invalid withdrawal amount" });
-//         }
-
-        // Fetch account details
-//         const account = await Account.findById(accountId);
-//         if (!account) {
-//             return res.status(404).json({ error: "Account not found" });
-//         }
-
-        // Check if withdrawal amount exceeds daily limit
-//         if ((account.withdrawalAmountToday + withdrawalAmount) > account.dailyWithdrawalLimit) {
-//             return res.status(400).json({ error: "Withdrawal amount exceeds daily limit" });
-//         }
-
-        // Check if withdrawal amount exceeds balance
-//         if (withdrawalAmount > account.balance) {
-//             return res.status(400).json({ error: "Insufficient balance" });
-//         }
-
-        // Update account balance and withdrawal amount for the day
-//         account.balance -= withdrawalAmount;
-//         account.withdrawalAmountToday += withdrawalAmount;
-//         await account.save();
-
-        // Record transaction
-//         const transaction = new Transaction({
-//             type: "Withdrawal",
-//             amount: -withdrawalAmount,
-//             account: accountId
-//         });
-//         await transaction.save();
-
-//         res.status(200).json({ message: "Withdrawal successful", balance: account.balance });
-//     } catch (error) {
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
