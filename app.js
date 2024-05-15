@@ -9,6 +9,7 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const { dbURI } = require('./config');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
 
 const app = express();
 const port = 3000
@@ -70,11 +71,31 @@ app.get('/api/accounts/getall', async (req, res) => {
   
   // Create Account
   app.post('/api/accounts', async (req, res) => {
+    const { accountNumber, firstName, lastName, email, password, dailyWithdrawalLimit } = req.body;
+    //Check if name is provided
+    if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({
+            error: 'Name, email and password are required'
+        })
+    }
+    // Hash Account Password
+    const hashPassword = await bcrypt.hash(password, 10);
+
     try {
-      const { accountNumber, firstName, lastName, dailyWithdrawalLimit } = req.body;
-      const newAccount = await Account.create({ accountNumber, firstName, lastName, dailyWithdrawalLimit });
+      const newAccount = await Account.create({ 
+        accountNumber, 
+        firstName, 
+        lastName, 
+        email, 
+        password:hashPassword, 
+        dailyWithdrawalLimit });
+      // Save the new account to the database
+      newAccount.save();
+
+      // Respond with the new account created object
       res.status(201).json(newAccount);
     } catch (error) {
+        // Handle any errors that occurred during the save operation
       res.status(500).json({ error: error.message });
       console.log(error);
     }
@@ -113,7 +134,7 @@ app.delete('/api/accounts/:accountId', async (req, res) => {
 app.put('/api/accounts/:accountId', async (req, res) => {
   try {
     const accountId = req.params.accountId;
-    const { accountNumber, firstName, lastName, dailyWithdrawalLimit } = req.body;
+    const { accountNumber, firstName, lastName, email, password, dailyWithdrawalLimit } = req.body;
     const updatedAccount = await Account.findByIdAndUpdate(accountId, { accountNumber, firstName, lastName, dailyWithdrawalLimit }, { new: true });
     if (!updatedAccount) {
       return res.status(404).json({ error: 'Account not found' });
@@ -285,40 +306,29 @@ app.post('/api/accounts/:accountId/deposit', async (req, res) => {
     }
 });
 
+app.post('/api/accounts/login', async (req, res) => {
+    const {email, password} = req.body;
 
+    if(!email || !password) {
+        return res.status(400).json({
+            error: 'email and password is required'
+        });
+    }
 
-//BoilerPlate
-// app.get('/accounts', (req, res) => {
-//     res.send('Hello World!')
-// });
+    const user = await Account.findOne({ email })
+        .catch(err => {
+            res.status(400).json({
+                error: err.message
+            });
+        });
 
-// app.get('/api/transactions', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.post('/api/accounts', async (req, res) => {
-//     try {
-//         const account = await Account.create(req.body);
-//         res.status(200).json({ message: "Account created successfully", account });
-
-//     }catch (err) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// app.post('/transactions', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.delete('/accounts', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-// app.delete('/transactions', (req, res) => {
-//     res.send('Hello World!')
-// });
-
-
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+        return res.status(400).json({
+            error: 'Incorrect password'
+        });
+    }
+})
 
 
 
