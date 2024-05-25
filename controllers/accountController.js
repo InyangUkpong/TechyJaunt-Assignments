@@ -1,4 +1,6 @@
 const Account = require('../models/account');
+// const jwt = require('jaswonwebtoken');
+
 
 // Controller function to create a new account
 exports.createAccount = async (req, res) => {
