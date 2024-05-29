@@ -72,7 +72,7 @@
 // EDITED ROUTES OH!
 
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const Account = require('../models/account');
 const Transaction = require('../models/transaction');
@@ -99,7 +99,7 @@ router.post('/register', async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+      return res.status(400).json({ error: 'firstName, lastName, email, and password are required' });
     }
 
     const accountNumber = await generateAccountNumber();
@@ -114,7 +114,8 @@ router.post('/register', async (req, res) => {
     });
 
     await newAccount.save();
-
+    //remove password from the response
+    newAccount.password = undefined;
     res.status(201).json(newAccount);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -38,7 +38,8 @@ const transactionSchema = new mongoose.Schema({
     required: true
   },
   account: {
-    type: mongoose.Schema.Types.ObjectId,
+    // type: mongoose.Schema.Types.ObjectId,
+    type: Number,
     ref: 'Account',
     required: true
   },

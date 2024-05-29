@@ -9,7 +9,7 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const { dbURI } = require("./config");
 require("dotenv").config();
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(express.json());
@@ -133,10 +133,11 @@ app.post("/api/accounts/register", async (req, res) => {
 app.get("/api/accounts/:accountId", async (req, res) => {
   try {
     const accountId = req.params.accountId;
-    const account = await Account.findById(accountId);
+    const account = await Account.findOne({accountNumber: accountId});
     if (!account) {
       return res.status(404).json({ error: "Account not found" });
     }
+    account.password = undefined
     res.json(account);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -203,15 +204,13 @@ app.put("/api/accounts/:accountId", async (req, res) => {
 
 // Fetches all transactions for an account
 
-
-
-
 app.get("/api/accounts/:accountNumber/transactions", async (req, res) => {
   try {
+    console.log('ere')
     const { accountNumber } = req.params;
 
     // Find the account by account number
-    const account = await Account.findOne({ accountNumber }).populate('transactions');
+    const account = await Transaction.findOne({ account: accountNumber }).populate('account');
     if (!account) {
       return res.status(404).json({ error: "Account not found" });
     }
@@ -239,7 +238,7 @@ app.get("/api/accounts/:accountNumber/transactions", async (req, res) => {
 //       return res.status(404).json({ error: "Account not found" });
 //     }
 
-    
+
 
 //     const transactions = account.transactions;
 //     res.status(200).json({ transactions });
@@ -260,7 +259,7 @@ app.post('/api/accounts/:accountId/withdrawals', async (req, res) => {
       return res.status(400).json({ error: 'Invalid withdrawal amount' });
     }
 
-    const account = await Account.findById(accountId);
+    const account = await Account.findOne({accountNumber: accountId});
     if (!account) {
       return res.status(404).json({ error: 'Account not found' });
     }
@@ -269,6 +268,11 @@ app.post('/api/accounts/:accountId/withdrawals', async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    //check if amount is greater than daily limit
+    if((withdrawalAmount + account.withdrawalAmountToday) > account.dailyWithdrawalLimit) {
+      return res.status(401).json({ error: 'You cannot withdraw more than your daily limit.' });
     }
 
     // Check if we need to reset the withdrawal amount
@@ -388,19 +392,31 @@ app.post("/api/accounts/:accountId/deposit", async (req, res) => {
     const depositAmount = req.body.amount;
     const password = req.body.password;
 
+    if(!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
     // Validate deposit amount
     if (!depositAmount || depositAmount <= 0) {
       return res.status(400).json({ error: "Invalid deposit amount" });
     }
 
+
     // Fetch account details
-    const account = await Account.findById(accountId);
+    const account = await Account.findOne({accountNumber: accountId});
     if (!account) {
       return res.status(404).json({ error: "Account not found" });
     }
+    //before depositing the funds check if the password provided matches
+    const passwordMatch = await bcrypt.compare(password, account.password);
+
+    if(!passwordMatch) {
+      return res.status(404).json({ error: "Incorrect Password. Please Try Again." });
+    }
+
 
     // Update account balance
-    account.balance += depositAmount;
+    account.balance += depositAmount
     await account.save();
 
     // Record transaction
@@ -415,6 +431,7 @@ app.post("/api/accounts/:accountId/deposit", async (req, res) => {
       .status(200)
       .json({ message: "Deposit successful", balance: account.balance });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ error: "Internal server error" });
   }
 });

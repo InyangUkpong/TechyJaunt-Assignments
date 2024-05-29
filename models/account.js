@@ -10,7 +10,7 @@ const accountSchema = new mongoose.Schema({
     type: Number,
     unique: true,
     required: true,
-    select: false
+    // select: false
   },
   firstName: {
     type: String,
@@ -33,12 +33,11 @@ const accountSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 500,
-    select: false
   },
-  withdrawalAmountToday: { 
+  withdrawalAmountToday: {
     type: Number,
     default: 0,
-    select: false
+    // select: false
   },
   lastWithdrawalDate: {
     type: Date,
@@ -46,7 +45,7 @@ const accountSchema = new mongoose.Schema({
   balance: {
     type: Number,
     default: 0,
-    select: false
+    // select: false
   },
   transactions: [{
     type: mongoose.Schema.Types.ObjectId,

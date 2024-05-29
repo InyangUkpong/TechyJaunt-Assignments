@@ -95,7 +95,7 @@
 // EDITED TRANSACTION ROUTES OH!
 
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const Account = require('../models/account');
 const Transaction = require('../models/transaction');
 
@@ -167,16 +167,16 @@ router.post('/withdrawals', async (req, res) => {
 
 
 // Fetch transactions for an account
-router.get('/:accountNumber/transactions', async (req, res) => {
+router.get('/:accountNumber', async (req, res) => {
   try {
     const { accountNumber } = req.params;
 
-    const account = await Account.findOne({ accountNumber }).populate('transactions');
-    if (!account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    const transactions = await Transaction.find({ account: accountNumber });
+    // if (!account) {
+    //   return res.status(404).json({ error: 'Account not found' });
+    // }
 
-    res.status(200).json({ transactions: account.transactions });
+    res.status(200).json({ transactions: transactions });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
     console.error(error);
