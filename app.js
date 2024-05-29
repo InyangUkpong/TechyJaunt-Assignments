@@ -1,8 +1,8 @@
-const express = require("express");
+const express = require('express');
+const router = express.Router();
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const router = express.Router();
 const Transaction = require("./models/transaction.js");
 const Account = require("./models/account.js");
 const transactionRoutes = require("./routes/transactionRoutes");
@@ -38,6 +38,8 @@ mongoose
 app.use("/api/accounts", accountRoutes);
 app.use("/api/transactions", transactionRoutes);
 
+
+
 // Connecting through Atlas
 // mongoose.connect("mongodb+srv://inyangweb:ZA32sr7y6oWO3DlZ@backenddb.zkdsvwp.mongodb.net/Node-API?retryWrites=true&w=majority&appName=backendDB")
 // .then(() => {
@@ -68,35 +70,64 @@ app.get("/api/accounts/getall", async (req, res) => {
   }
 });
 
-// Create Account
+
+//Modified Create Acct
+
+// Function to generate a random account number
+const generateAccountNumber = async () => {
+  let accountNumber;
+  let accountExists = true;
+
+  while (accountExists) {
+    // Generate a random 10-digit account number
+    accountNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+
+    // Check if the account number already exists in the database
+    const existingAccount = await Account.findOne({ accountNumber });
+    accountExists = !!existingAccount;
+  }
+
+  return accountNumber;
+};
+
 app.post("/api/accounts/register", async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
-    //Check if name is provided
+
+    // Check if all required fields are provided
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
-        error: "Name, email and password are required",
+        error: "Name, email, and password are required",
       });
     }
-    // Hash Account Password
+
+    // Generate a unique account number
+    const accountNumber = await generateAccountNumber();
+
+    // Hash the account password
     const hashPassword = await bcrypt.hash(password, 10);
-    const newAccount = await Account.create({
+
+    // Create a new account
+    const newAccount = new Account({
       firstName,
       lastName,
       email,
       password: hashPassword,
+      accountNumber,
     });
+
     // Save the new account to the database
-    newAccount.save();
+    await newAccount.save();
 
     // Respond with the new account created object
     res.status(201).json(newAccount);
   } catch (error) {
     // Handle any errors that occurred during the save operation
     res.status(500).json({ error: error.message });
-    console.log(error);
+    console.error(error);
   }
 });
+
 
 // Fetch single account
 app.get("/api/accounts/:accountId", async (req, res) => {
@@ -172,16 +203,15 @@ app.put("/api/accounts/:accountId", async (req, res) => {
 
 // Fetches all transactions for an account
 
-app.get("/api/accounts/:accountId/transactions", async (req, res) => {
+
+
+
+app.get("/api/accounts/:accountNumber/transactions", async (req, res) => {
   try {
-    const { accountId } = req.params;
+    const { accountNumber } = req.params;
 
-    // Validate the accountId parameter
-    if (!mongoose.Types.ObjectId.isValid(accountId)) {
-      return res.status(400).json({ error: "Invalid account ID" });
-    }
-
-    const account = await Account.findById(accountId).populate("transactions");
+    // Find the account by account number
+    const account = await Account.findOne({ accountNumber }).populate('transactions');
     if (!account) {
       return res.status(404).json({ error: "Account not found" });
     }
@@ -194,57 +224,87 @@ app.get("/api/accounts/:accountId/transactions", async (req, res) => {
   }
 });
 
+
+// app.get("/api/accounts/:accountId/transactions", async (req, res) => {
+//   try {
+//     const { accountId } = req.params;
+
+//     // Validate the accountId parameter
+//     if (!mongoose.Types.ObjectId.isValid(accountId)) {
+//       return res.status(400).json({ error: "Invalid account ID" });
+//     }
+
+//     const account = await Account.findById(accountId).populate("transactions");
+//     if (!account) {
+//       return res.status(404).json({ error: "Account not found" });
+//     }
+
+    
+
+//     const transactions = account.transactions;
+//     res.status(200).json({ transactions });
+//   } catch (error) {
+//     console.error("Error fetching transactions:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
 // Daily Withdrawal limit
-app.post("/api/accounts/:accountId/withdrawal", async (req, res) => {
+app.post('/api/accounts/:accountId/withdrawals', async (req, res) => {
   try {
     const accountId = req.params.accountId;
-    const amount = req.body.amount;
+    const withdrawalAmount = req.body.amount;
+    const password = req.body.password;
+
+    if (withdrawalAmount === undefined || withdrawalAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid withdrawal amount' });
+    }
 
     const account = await Account.findById(accountId);
     if (!account) {
-      return res.status(404).json({ error: "Account not found" });
+      return res.status(404).json({ error: 'Account not found' });
     }
 
-    const today = new Date().toDateString();
-    if (account.lastWithdrawalDate !== today) {
-      // Reset daily withdrawal amount if it's a new day
-      account.lastWithdrawalDate = today;
-      account.dailyWithdrawalAmount = 0;
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, account.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
-    if (amount <= 0) {
-      return res.status(400).json({ error: "Invalid withdrawal amount" });
+    // Check if we need to reset the withdrawal amount
+    const today = new Date();
+    const isSameDay = account.lastWithdrawalDate && account.lastWithdrawalDate.toDateString() === today.toDateString();
+
+    if (!isSameDay) {
+      account.withdrawalAmountToday = 0;
     }
 
-    if (amount > account.balance) {
-      return res.status(400).json({ error: "Insufficient funds" });
+    if ((account.withdrawalAmountToday + withdrawalAmount) > account.dailyWithdrawalLimit) {
+      return res.status(400).json({ error: 'Exceeds daily withdrawal limit' });
     }
 
-    if (
-      amount > account.dailyWithdrawalLimit ||
-      account.dailyWithdrawalAmount + amount > account.dailyWithdrawalLimit
-    ) {
-      return res.status(400).json({ error: "Exceeds daily withdrawal limit" });
-    }
-
-    // If all conditions are met, perform withdrawal
-    account.balance -= amount;
-    account.transactions.push({
-      type: "withdrawal",
-      amount: amount,
-      timestamp: new Date(),
-    });
-    account.dailyWithdrawalAmount += amount;
-
-    // Save the updated account
+    // Update account balance and withdrawal amount for the day
+    account.balance -= withdrawalAmount;
+    account.withdrawalAmountToday += withdrawalAmount;
+    account.lastWithdrawalDate = today;
     await account.save();
 
-    res.json({ message: "Withdrawal successful", account: account });
+    // Record transaction
+    const transaction = new Transaction({
+      type: 'Withdrawal',
+      amount: -withdrawalAmount,
+      account: accountId,
+    });
+    await transaction.save();
+
+    res.status(200).json({ message: 'Withdrawal successful', balance: account.balance });
+
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: 'Internal server error' });
+    console.error(error);
   }
 });
+
 // This is just a new route to set daily withdraw limitations for a single account
 app.put("/api/accounts/:accountId/daily-withdrawal-limit", async (req, res) => {
   try {
@@ -267,57 +327,57 @@ app.put("/api/accounts/:accountId/daily-withdrawal-limit", async (req, res) => {
   }
 });
 
-
-//New Withdrawal API
-app.post("/api/accounts/withdrawals", async (req, res) => {
+// Withdrawal API
+app.post('/api/accounts/withdrawals', async (req, res) => {
   try {
-    const accountId = req.body.accountId;
-    const withdrawalAmount = req.body.amount;
-    const password = req.body.password;
+    const { accountNumber, amount, password } = req.body;
 
-    if (withdrawalAmount === undefined || withdrawalAmount <= 0) {
-      return res.status(400).json({ error: "Invalid withdrawal amount" });
+    if (amount === undefined || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid withdrawal amount' });
     }
 
-    // Withdrawal logic goes here
-    const account = await Account.findById(accountId);
+    // Find the account by account number
+    const account = await Account.findOne({ accountNumber });
     if (!account) {
-      return res.status(404).json({ error: "Account not found" });
+      return res.status(404).json({ error: 'Account not found' });
     }
 
-    if (
-      account.withdrawalAmountToday + withdrawalAmount >
-      account.dailyWithdrawalLimit
-    ) {
-      return res.status(400).json({ error: "Exceeds daily withdrawal limit" });
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, account.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
-    // Validate password
-    const verifyPassword = await bcrypt.compare(password, account.password);
+    // Check if we need to reset the withdrawal amount
+    const today = new Date();
+    const isSameDay = account.lastWithdrawalDate && account.lastWithdrawalDate.toDateString() === today.toDateString();
 
-    if (!verifyPassword) {
-      return res.status(401).json({ error: "Invalid password" });
+    if (!isSameDay) {
+      account.withdrawalAmountToday = 0;
+    }
+
+    if ((account.withdrawalAmountToday + amount) > account.dailyWithdrawalLimit) {
+      return res.status(400).json({ error: 'Exceeds daily withdrawal limit' });
     }
 
     // Update account balance and withdrawal amount for the day
-    account.balance -= withdrawalAmount;
-    account.withdrawalAmountToday += withdrawalAmount;
+    account.balance -= amount;
+    account.withdrawalAmountToday += amount;
+    account.lastWithdrawalDate = today;
     await account.save();
 
     // Record transaction
     const transaction = new Transaction({
-      type: "Withdrawal",
-      amount: -withdrawalAmount,
-      account: accountId,
+      type: 'Withdrawal',
+      amount: -amount,
+      account: account._id,
     });
     await transaction.save();
 
-    res
-      .status(200)
-      .json({ message: "Withdrawal successful", balance: account.balance });
+    res.status(200).json({ message: 'Withdrawal successful', balance: account.balance });
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-    console.log(error);
+    res.status(500).json({ error: 'Internal server error' });
+    console.error(error);
   }
 });
 

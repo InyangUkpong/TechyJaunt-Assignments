@@ -1,26 +1,27 @@
 const Transaction = require('../models/transaction');
+const Account = require('../models/account');
 
 // Controller function to create a new transaction
-exports.createTransaction = async (req, res) => {
-    try {
-        const { type, amount, accountId } = req.body;
-        const transaction = new Transaction({ type, amount, account: accountId });
-        await transaction.save();
-        res.status(201).json({ message: "Transaction created successfully", transaction });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+
+// transactionController.js.
+
+// Function to create a new transaction
+const createTransaction = async (accountId, amount, type) => {
+  try {
+    const transaction = new Transaction({ type, amount, account: accountId });
+    await transaction.save();
+
+    const account = await Account.findById(accountId);
+    account.transactions.push(transaction._id);
+    await account.save();
+
+    return transaction;
+  } catch (error) {
+    console.error('Error creating transaction:', error);
+    throw error;
+  }
 };
 
-// Controller function to fetch all transactions for a specific account
-exports.getAllTransactionsForAccount = async (req, res) => {
-    try {
-        const accountId = req.params.accountId;
-        const transactions = await Transaction.find({ account: accountId });
-        res.status(200).json(transactions);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
+// Other transaction-related controller functions can go here...
 
-// Other controller functions for updating, deleting, and fetching single transactions can be implemented similarly
+module.exports = { createTransaction };
