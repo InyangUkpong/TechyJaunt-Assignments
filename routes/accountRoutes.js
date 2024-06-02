@@ -94,34 +94,7 @@ const generateAccountNumber = async () => {
 };
 
 // Register a new account
-router.post('/register', async (req, res) => {
-  try {
-    const { firstName, lastName, email, password } = req.body;
-
-    if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ error: 'firstName, lastName, email, and password are required' });
-    }
-
-    const accountNumber = await generateAccountNumber();
-    const hashPassword = await bcrypt.hash(password, 10);
-
-    const newAccount = new Account({
-      firstName,
-      lastName,
-      email,
-      password: hashPassword,
-      accountNumber,
-    });
-
-    await newAccount.save();
-    //remove password from the response
-    newAccount.password = undefined;
-    res.status(201).json(newAccount);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-    console.error(error);
-  }
-});
+router.post('/register', Account.createAccount)
 
 // Update daily withdrawal limit
 router.put('/:accountId/daily-withdrawal-limit', async (req, res) => {

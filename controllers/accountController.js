@@ -1,17 +1,60 @@
 const Account = require('../models/account');
+const bcrypt = require('bycrptjs');
 // const jwt = require('jaswonwebtoken');
 
+const generateAccountNumber = async () => {
+    let accountNumber;
+    let accountExists = true;
+  
+    while (accountExists) {
+      // Generate a random 10-digit account number
+      accountNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+  
+      // Check if the account number already exists in the database
+      const existingAccount = await Account.findOne({ accountNumber });
+      accountExists = !!existingAccount;
+    }
+  
+    return accountNumber;
+  };
 
 // Controller function to create a new account
 exports.createAccount = async (req, res) => {
     try {
-        const { accountNumber, firstName, lastName } = req.body;
-        const account = new Account({ accountNumber, firstName, lastName });
-        await account.save();
-        res.status(201).json({ message: "Account created successfully", account });
-    } catch (error) {
+        const { firstName, lastName, email, password } = req.body;
+    
+        // Check if all required fields are provided
+        if (!firstName || !lastName || !email || !password) {
+          return res.status(400).json({
+            error: "Name, email, and password are required",
+          });
+        }
+    
+        // Generate a unique account number
+        const accountNumber = await generateAccountNumber();
+    
+        // Hash the account password
+        const hashPassword = await bcrypt.hash(password, 10);
+    
+        // Create a new account
+        const newAccount = new Account({
+          firstName,
+          lastName,
+          email,
+          password: hashPassword,
+          accountNumber,
+        });
+    
+        // Save the new account to the database
+        await newAccount.save();
+    
+        // Respond with the new account created object
+        res.status(201).json(newAccount);
+      } catch (error) {
+        // Handle any errors that occurred during the save operation
         res.status(500).json({ error: error.message });
-    }
+        console.error(error);
+      }
 };
 
 // Controller function to fetch all accounts
